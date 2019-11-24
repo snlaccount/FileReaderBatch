@@ -9,3 +9,5 @@ CREATE TABLE "TESTVEHICLE"
 "MODELYEAR" VARCHAR(35),
 PRIMARY KEY (ID)
 ) ;
+
+create sequence vehicle_seq increment by 1;
