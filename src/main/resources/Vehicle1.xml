@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Vehicle>
+    <vehiclenumber>1</vehiclenumber>
+    <VehicleInformation>
+        <brand>Maruti</brand>
+        <country>In</country>
+        <modelname>800</modelname>
+        <modelyear>2000</modelyear>
+    </VehicleInformation>
+</Vehicle>
+<!--
+<Vehicle>
+<vehiclenumber>2</vehiclenumber>
+<VehicleInformation>
+    <brand>Maruti-Suzuki</brand>
+    <country>In</country>
+    <modelname>Ritz</modelname>
+    <modelyear>2010</modelyear>
+</VehicleInformation>
+</Vehicle>
+-->
