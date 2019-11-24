@@ -47,9 +47,9 @@ import com.example.springBootBatch.fileRead.util.Constants;
 import com.example.springBootBatch.fileRead.util.VehiclePreparedSmtSetter;
 
 
-@Configuration
+/*@Configuration
 @EnableBatchProcessing
-@EnableScheduling
+@EnableScheduling*/
 public class BatchConfig {
 	
 	Logger logger = LoggerFactory.getLogger(BatchConfig.class);

@@ -42,6 +42,7 @@ public class VehicleItemProcessor implements ItemProcessor<Vehicle, Vehicle> {
 	public void setProcessingFileName(String processingFileName) {
 		this.processingFileName = processingFileName;
 	}
+
 	@Override
 	public Vehicle process(Vehicle factoryFeedVehicle) throws Exception {
 		
