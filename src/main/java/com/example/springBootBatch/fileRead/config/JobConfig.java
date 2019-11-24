@@ -21,6 +21,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.ItemPreparedStatementSetter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.file.MultiResourceItemReader;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,12 +30,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import javax.sql.DataSource;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Date;
 
 /**
@@ -71,8 +79,29 @@ public class JobConfig {
     @Bean
     public ItemReader<Vehicle> xmlFileItemReader(){
         StaxEventItemReader<Vehicle> xmlFileReader = new StaxEventItemReader<>();
-        //xmlFileReader.setResource(new ClassPathResource(env.getRequiredProperty(filepath)));
-        xmlFileReader.setResource(new ClassPathResource(filepath));
+        MultiResourceItemReader<Vehicle> multiResourceItemReader = new MultiResourceItemReader<>();
+        //xmlFileReader.setResource(new ClassPathResource(filepath));
+       /* Resource[] resources = null;
+        ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+        try {
+            resources = patternResolver.getResources("file:" + "D:\\Test\\*.xml");
+            for (Resource res : resources ){
+                xmlFileReader.setResource(res);
+            }
+            multiResourceItemReader.setResources(resources);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+       /* try{
+            xmlFileReader.setResource(new UrlResource("file:" + "D:\\Test\\*.xml"));
+
+        }catch (MalformedURLException e) {
+            e.printStackTrace();
+            e.getMessage();
+        }*/
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        xmlFileReader.setResource(resolver.getResource("file:" + "D:\\Test\\VehicleInfo.xml"));
+
         //xmlFileReader.setFragmentRootElementName("Vehicle");
         xmlFileReader.setFragmentRootElementNames(new String[] {"Vehicle", "VehicleInformation" });
 
@@ -135,5 +164,6 @@ public class JobConfig {
                     .toJobParameters();
             jobLauncher.run(xmlFileToDatabaseJob(), jobParameters);
     }*/
+
 
 }
