@@ -12,3 +12,5 @@ PRIMARY KEY (ID)
 ) ;
 
 create sequence vehicle_seq increment by 1;
+
+INSERT INTO TESTVEHICLE(ID,vehiclenumber,brand,country,modelname,modelyear)  VALUES(1,'MH12 34','BM','IN','Benz','2000')

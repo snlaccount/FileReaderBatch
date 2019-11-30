@@ -56,9 +56,9 @@ import java.util.Date;
  *     BATCH_STEP_EXECUTION  step detail with status and error meessage
  *
  */
-@Configuration
+/*@Configuration
 @EnableBatchProcessing
-@EnableScheduling
+@EnableScheduling*/
 public class JobConfig {
 
     Logger logger = LoggerFactory.getLogger(JobConfig.class);
@@ -99,6 +99,7 @@ public class JobConfig {
             e.printStackTrace();
             e.getMessage();
         }*/
+        //xmlFileReader.setResource(new FileSystemResource("file:" + "D:\\Test\\*.xml"));
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         xmlFileReader.setResource(resolver.getResource("file:" + "D:\\Test\\VehicleInfo.xml"));
 
@@ -112,6 +113,14 @@ public class JobConfig {
         return xmlFileReader;
 
     }
+
+   /* @Bean
+    public ItemReader<Vehicle> zipFileItemReader(){
+        MultiResourceItemReader<Vehicle> resourceItemReader = new MultiResourceItemReader<>();
+        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        return resourceItemReader;
+    }*/
+
 
     @Bean
     public ItemProcessor<Vehicle, Vehicle> xmlFileItemProcessor() {
