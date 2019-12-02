@@ -1,49 +1,28 @@
 package com.example.springBootBatch.fileRead.config;
 
-import com.example.springBootBatch.fileRead.model.Vehicle;
-import com.example.springBootBatch.fileRead.model.VehicleInformation;
-import com.example.springBootBatch.fileRead.model.ZipData;
-import com.example.springBootBatch.fileRead.processor.VehicleItemProcessor;
-import com.example.springBootBatch.fileRead.reader.ZipMultiResourceItemReader;
-import com.example.springBootBatch.fileRead.util.Constants;
-import com.example.springBootBatch.fileRead.util.VehiclePreparedSmtSetter;
 import com.example.springBootBatch.fileRead.writer.ConsoleItemWriter;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.*;
-import org.springframework.batch.core.annotation.BeforeStep;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.item.ExecutionContext;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.ItemPreparedStatementSetter;
-import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.MultiResourceItemReader;
-import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
-import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.mapping.PassThroughLineMapper;
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
-import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -57,21 +36,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-/**
- * Spring batch config file.
- * All job and step level details are mentioend here
- * to conect to h2 DB : http://localhost:8081/console/login.do
- * to invoke job: http://localhost:8081/dummy/invokejob
- * Importante tables to check:
- *     BATCH_JOB_INSTANCE    gives instance id with job key
- *     BATCH_JOB_EXECUTION   detailed status of job
- *     BATCH_STEP_EXECUTION  step detail with status and error meessage
- *
- */
 /*@Configuration
 @EnableBatchProcessing
 @EnableScheduling*/
-public class UnzipFileConfig {
+public class UnzipFileUsingTaskletConfig {
+
 
     Logger logger = LoggerFactory.getLogger(UnzipFileConfig.class);
 
@@ -140,97 +109,34 @@ public class UnzipFileConfig {
 
     }
 
-    /*@Bean
-    public MultiResourceItemReader<ZipData> multiResourceItemReader() throws IOException {
-        MultiResourceItemReader<ZipData> resourceItemReader = new ZipMultiResourceItemReader<ZipData>();
 
-        File f = new File("D://Test/Tempfiles/SampleFiles");
-        String s = f.getAbsolutePath();
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        //resourceItemReader.setResources(new Resource[]{"D:/Test/Tempfiles/SampleFiles.zip"});
-        resourceItemReader.setResources(resolver.getResources("file:" +"D:/Test/Tempfiles/SampleFiles.zip"));
-        //resourceItemReader.setResources(resolver.getResources(s));
-        //resourceItemReader.setResources(new Resource[]{new UrlResource("file://" + "D:/Test/Tempfiles")});
 
-        resourceItemReader.setDelegate(reader());
-        return resourceItemReader;
-    }
-
-    @Bean
-    public FlatFileItemReader<ZipData> reader()
-    {
-        //Create reader instance
-        FlatFileItemReader<ZipData> reader = new FlatFileItemReader<ZipData>();
-        reader.setLineMapper(new DefaultLineMapper() {
-            {
-                setLineTokenizer(new DelimitedLineTokenizer() {
-                    {
-                        setNames(new String[] { "data"});
-                    }
-                });
-
-                setFieldSetMapper(new BeanWrapperFieldSetMapper() {
-                    {
-                        setTargetType(ZipData.class);
-                    }
-                });
+    public void unzipFiles(){
+        String fileZip = "D:\\Test\\Tempfiles\\SampleFiles.zip";
+        File destDir = new File("D:\\Test\\Tempfiles\\Extracted");
+        byte[] buffer = new byte[1024];
+        try {
+            ZipInputStream zis = new ZipInputStream(new FileInputStream(fileZip));
+            ZipEntry zipEntry = zis.getNextEntry();
+            while (zipEntry != null) {
+                File newFile = newFile(destDir, zipEntry);
+                FileOutputStream fos = new FileOutputStream(newFile);
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+                fos.close();
+                zipEntry = zis.getNextEntry();
             }
-        });
-        //reader.setLineMapper(new PassThroughLineMapper());
-        return reader;
+            zis.closeEntry();
+            zis.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
-    @Bean
-    public ConsoleItemWriter<ZipData> writer()
-    {
-        return new ConsoleItemWriter<ZipData>();
-    }
-
-    */
-
-
-   /* @Bean
-    public MultiResourceItemReader<String> zipMultiResourceItemReader() throws IOException {
-        MultiResourceItemReader<String> resourceItemReader = new ZipMultiResourceItemReader<String>();
-
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        //resourceItemReader.setResources(new Resource[]{"D:/Test/Tempfiles/SampleFiles.zip"});
-        resourceItemReader.setResources(resolver.getResources("file:" +"D:/Test/Tempfiles/SampleFiles.zip"));
-        //resourceItemReader.setResources(resolver.getResources(s));
-        //resourceItemReader.setResources(new Resource[]{new UrlResource("file://" + "D:/Test/Tempfiles")});
-
-        // resourceItemReader.open(stepExecution.getJobExecution().getExecutionContext());
-        //MetaDataInstanceFactory
-        resourceItemReader.setDelegate(zipReader());
-        return resourceItemReader;
-    }*/
-
-   public void unzipFiles(){
-       String fileZip = "D:\\Test\\Tempfiles\\SampleFiles.zip";
-       File destDir = new File("D:\\Test\\Tempfiles\\Extracted");
-       byte[] buffer = new byte[1024];
-       try {
-           ZipInputStream zis = new ZipInputStream(new FileInputStream(fileZip));
-           ZipEntry zipEntry = zis.getNextEntry();
-           while (zipEntry != null) {
-               File newFile = newFile(destDir, zipEntry);
-               FileOutputStream fos = new FileOutputStream(newFile);
-               int len;
-               while ((len = zis.read(buffer)) > 0) {
-                   fos.write(buffer, 0, len);
-               }
-               fos.close();
-               zipEntry = zis.getNextEntry();
-           }
-           zis.closeEntry();
-           zis.close();
-       } catch (FileNotFoundException e) {
-           e.printStackTrace();
-       }
-       catch (IOException e) {
-           e.printStackTrace();
-       }
-   }
 
     public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
         File destFile = new File(destinationDir, zipEntry.getName());
@@ -249,8 +155,9 @@ public class UnzipFileConfig {
 
 
     @Bean
+    @StepScope
     public MultiResourceItemReader<String> zipMultiResourceItemReader() throws MalformedURLException {
-        unzipFiles();
+        //unzipFiles();
         MultiResourceItemReader<String> resourceItemReader = new MultiResourceItemReader<>();
 
         /*PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -269,27 +176,56 @@ public class UnzipFileConfig {
             e.printStackTrace();
         }
         resourceItemReader.setResources(inputResources);
-
+        System.out.println("In MultiResourceItemReader");
         resourceItemReader.setDelegate(zipReader());
 
         return resourceItemReader;
     }
 
     @Bean
+    @StepScope
     public FlatFileItemReader<String> zipReader()
     {
         FlatFileItemReader<String> reader = new FlatFileItemReader<String>();
+        System.out.println("In FlatFileItemReader");
         reader.setLineMapper(new PassThroughLineMapper());
         return reader;
     }
 
     @Bean
+    @StepScope
     public ConsoleItemWriter<String> writer()
     {
         return new ConsoleItemWriter<String>();
     }
 
 
+    /*@Bean
+    public Step step1() throws IOException {
+        return stepBuilderFactory.get("step1").<String, String>chunk(5)
+                .reader(zipMultiResourceItemReader())
+                .writer(writer())
+                .build();
+    }
+    @Bean
+    public Job readZipFilesJob() throws IOException {
+        return jobBuilderFactory
+                .get("readZipFilesJob")
+                .incrementer(new RunIdIncrementer())
+                .start(step1())
+                .build();
+    }*/
+    @Bean
+    public UnZipTask unZipTask(){
+        return new UnZipTask();
+    }
+
+    @Bean
+    public Step unzipFileStep(){
+        return stepBuilderFactory.get("unzipFileStep")
+                .tasklet(unZipTask())
+                .build();
+    }
 
     @Bean
     public Step step1() throws IOException {
@@ -298,14 +234,13 @@ public class UnzipFileConfig {
                 .writer(writer())
                 .build();
     }
-
-
     @Bean
     public Job readZipFilesJob() throws IOException {
         return jobBuilderFactory
                 .get("readZipFilesJob")
                 .incrementer(new RunIdIncrementer())
-                .start(step1())
+                .start(unzipFileStep())
+                .next(step1())
                 .build();
     }
 
@@ -316,9 +251,4 @@ public class UnzipFileConfig {
         jobLauncher.run(readZipFilesJob(), jobParameters);
     }
 
-
 }
-
-
-
-
